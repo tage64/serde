@@ -9,7 +9,7 @@ use de::{DeserializeSeed, MapAccess, Unexpected};
 #[cfg(any(feature = "std", feature = "alloc"))]
 pub use self::content::{
     Content, ContentDeserializer, ContentRefDeserializer, EnumDeserializer,
-    InternallyTaggedUnitVisitor, TagContentOtherField, TagContentOtherFieldVisitor,
+    TagContentOtherField, TagContentOtherFieldVisitor,
     TagOrContentField, TagOrContentFieldVisitor, TaggedContentVisitor, UntaggedUnitVisitor,
 };
 
@@ -208,7 +208,7 @@ mod content {
     use __private::size_hint;
     use actually_private;
     use de::{
-        self, Deserialize, DeserializeSeed, Deserializer, EnumAccess, Expected, IgnoredAny,
+        self, Deserialize, DeserializeSeed, Deserializer, EnumAccess, Expected,
         MapAccess, SeqAccess, Unexpected, Visitor,
     };
 
@@ -1277,6 +1277,7 @@ mod content {
                 Content::Map(ref v) if v.is_empty() || !self.deny_unknown_fields => {
                     visitor.visit_unit()
                 }
+                Content::Seq(ref v) if v.is_empty() => visitor.visit_unit(),
                 _ => Err(self.invalid_type(&visitor)),
             }
         }
@@ -2479,51 +2480,6 @@ mod content {
 
         fn into_deserializer(self) -> Self {
             self
-        }
-    }
-
-    /// Visitor for deserializing an internally tagged unit variant.
-    ///
-    /// Not public API.
-    pub struct InternallyTaggedUnitVisitor<'a> {
-        type_name: &'a str,
-        variant_name: &'a str,
-    }
-
-    impl<'a> InternallyTaggedUnitVisitor<'a> {
-        /// Not public API.
-        pub fn new(type_name: &'a str, variant_name: &'a str) -> Self {
-            InternallyTaggedUnitVisitor {
-                type_name: type_name,
-                variant_name: variant_name,
-            }
-        }
-    }
-
-    impl<'de, 'a> Visitor<'de> for InternallyTaggedUnitVisitor<'a> {
-        type Value = ();
-
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            write!(
-                formatter,
-                "unit variant {}::{}",
-                self.type_name, self.variant_name
-            )
-        }
-
-        fn visit_seq<S>(self, _: S) -> Result<(), S::Error>
-        where
-            S: SeqAccess<'de>,
-        {
-            Ok(())
-        }
-
-        fn visit_map<M>(self, mut access: M) -> Result<(), M::Error>
-        where
-            M: MapAccess<'de>,
-        {
-            while try!(access.next_entry::<IgnoredAny, IgnoredAny>()).is_some() {}
-            Ok(())
         }
     }
 

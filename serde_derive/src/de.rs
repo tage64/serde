@@ -1756,14 +1756,12 @@ fn deserialize_internally_tagged_variant(
     match effective_style(variant) {
         Style::Unit => {
             let this = &params.this;
-            let type_name = params.type_name();
-            let variant_name = variant.ident.to_string();
             let default = variant.fields.get(0).map(|field| {
                 let default = Expr(expr_is_missing(field, cattrs));
                 quote!((#default))
             });
             quote_block! {
-                try!(_serde::Deserializer::deserialize_any(#deserializer, _serde::__private::de::InternallyTaggedUnitVisitor::new(#type_name, #variant_name)));
+                try!(<() as _serde::Deserialize>::deserialize(#deserializer));
                 _serde::__private::Ok(#this::#variant_ident #default)
             }
         }

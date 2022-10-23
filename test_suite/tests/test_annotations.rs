@@ -2415,6 +2415,18 @@ fn test_internally_tagged_enum_unit_variants_unknown_fields() {
         &[
             Token::Map { len: Some(2) },
             Token::Str("t"),
+            Token::Str("A"),
+            Token::Str("msg"),
+            Token::Str("abc"),
+            Token::MapEnd,
+        ],
+        "invalid type: map, expected unit",
+    );
+
+    assert_de_tokens_error::<DenyUnknownFields>(
+        &[
+            Token::Map { len: Some(2) },
+            Token::Str("t"),
             Token::Str("B"),
             Token::Str("msg"),
             Token::Str("abc"),

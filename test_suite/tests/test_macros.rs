@@ -1921,6 +1921,21 @@ fn test_internally_tagged_newtype_variant_containing_unit_struct() {
     assert_de_tokens(
         &Message::Info(Info),
         &[
+            Token::Struct {
+                name: "Message",
+                len: 2,
+            },
+            Token::Str("topic"),
+            Token::Str("Info"),
+            Token::Str("msg"),
+            Token::Str("abc"),
+            Token::StructEnd,
+        ],
+    );
+
+    assert_de_tokens(
+        &Message::Info(Info),
+        &[
             Token::Seq { len: Some(1) },
             Token::Str("Info"),
             Token::SeqEnd,
