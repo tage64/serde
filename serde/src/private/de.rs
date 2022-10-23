@@ -995,6 +995,8 @@ mod content {
     /// Not public API
     pub struct ContentDeserializer<'de, E> {
         content: Content<'de>,
+        /// Decide whether unknown fields should be denied or not while deserializing the content.
+        deny_unknown_fields: bool,
         err: PhantomData<E>,
     }
 
@@ -1272,7 +1274,9 @@ mod content {
                 //     }
                 //
                 // We want {"result":"Success"} to deserialize into Response<()>.
-                Content::Map(ref v) if v.is_empty() => visitor.visit_unit(),
+                Content::Map(ref v) if v.is_empty() || !self.deny_unknown_fields => {
+                    visitor.visit_unit()
+                }
                 _ => Err(self.invalid_type(&visitor)),
             }
         }
@@ -1300,7 +1304,9 @@ mod content {
                 //
                 // We want {"topic":"Info"} to deserialize even though
                 // ordinarily unit structs do not deserialize from empty map/seq.
-                Content::Map(ref v) if v.is_empty() => visitor.visit_unit(),
+                Content::Map(ref v) if v.is_empty() || !self.deny_unknown_fields => {
+                    visitor.visit_unit()
+                }
                 Content::Seq(ref v) if v.is_empty() => visitor.visit_unit(),
                 _ => self.deserialize_any(visitor),
             }
@@ -1458,7 +1464,14 @@ mod content {
         pub fn new(content: Content<'de>) -> Self {
             ContentDeserializer {
                 content: content,
+                deny_unknown_fields: false,
                 err: PhantomData,
+            }
+        }
+        pub fn new_deny_unknown_fields(content: Content<'de>) -> Self {
+            Self {
+                deny_unknown_fields: true,
+                ..Self::new(content)
             }
         }
     }

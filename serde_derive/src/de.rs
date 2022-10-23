@@ -1319,8 +1319,14 @@ fn deserialize_internally_tagged_enum(
                 params,
                 variant,
                 cattrs,
-                quote! {
-                    _serde::__private::de::ContentDeserializer::<__D::Error>::new(__tagged.content)
+                if cattrs.deny_unknown_fields() {
+                    quote! {
+                        _serde::__private::de::ContentDeserializer::<__D::Error>::new_deny_unknown_fields(__tagged.content)
+                    }
+                } else {
+                    quote! {
+                        _serde::__private::de::ContentDeserializer::<__D::Error>::new(__tagged.content)
+                    }
                 },
             ));
 

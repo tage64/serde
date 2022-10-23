@@ -2322,6 +2322,121 @@ fn test_internally_tagged_enum_new_type_with_unit() {
 }
 
 #[test]
+fn test_internally_tagged_enum_unit_variants_unknown_fields() {
+    #[derive(Serialize, Deserialize, PartialEq, Debug)]
+    struct UnitStruct;
+
+    #[derive(Serialize, Deserialize, PartialEq, Debug)]
+    #[serde(tag = "t")]
+    enum AllowUnknownFields {
+        A,
+        B(()),
+        C(UnitStruct),
+    }
+
+    #[derive(Serialize, Deserialize, PartialEq, Debug)]
+    #[serde(tag = "t", deny_unknown_fields)]
+    enum DenyUnknownFields {
+        A,
+        B(()),
+        C(UnitStruct),
+    }
+
+    // Test that unknown fields are actually allowed.
+    assert_de_tokens(
+        &AllowUnknownFields::A,
+        &[
+            Token::Map { len: Some(2) },
+            Token::Str("t"),
+            Token::Str("A"),
+            Token::Str("msg"),
+            Token::Str("abc"),
+            Token::MapEnd,
+        ],
+    );
+
+    assert_de_tokens(
+        &AllowUnknownFields::B(()),
+        &[
+            Token::Map { len: Some(2) },
+            Token::Str("t"),
+            Token::Str("B"),
+            Token::Str("msg"),
+            Token::Str("abc"),
+            Token::MapEnd,
+        ],
+    );
+
+    assert_de_tokens(
+        &AllowUnknownFields::C(UnitStruct),
+        &[
+            Token::Map { len: Some(2) },
+            Token::Str("t"),
+            Token::Str("C"),
+            Token::Str("msg"),
+            Token::Str("abc"),
+            Token::MapEnd,
+        ],
+    );
+
+    // Test that parsing works at all with `deny_unknown_fields`.
+    assert_de_tokens(
+        &DenyUnknownFields::A,
+        &[
+            Token::Map { len: Some(1) },
+            Token::Str("t"),
+            Token::Str("A"),
+            Token::MapEnd,
+        ],
+    );
+
+    assert_de_tokens(
+        &DenyUnknownFields::B(()),
+        &[
+            Token::Map { len: Some(1) },
+            Token::Str("t"),
+            Token::Str("B"),
+            Token::MapEnd,
+        ],
+    );
+
+    assert_de_tokens(
+        &DenyUnknownFields::C(UnitStruct),
+        &[
+            Token::Map { len: Some(1) },
+            Token::Str("t"),
+            Token::Str("C"),
+            Token::MapEnd,
+        ],
+    );
+
+    // Test that unknown fields are denied.
+    assert_de_tokens_error::<DenyUnknownFields>(
+        &[
+            Token::Map { len: Some(2) },
+            Token::Str("t"),
+            Token::Str("B"),
+            Token::Str("msg"),
+            Token::Str("abc"),
+            Token::MapEnd,
+        ],
+        "invalid type: map, expected unit",
+    );
+
+    assert_de_tokens_error::<DenyUnknownFields>(
+        &[
+            Token::Map { len: Some(2) },
+            Token::Str("t"),
+            Token::Str("C"),
+            Token::Str("msg"),
+            Token::Str("abc"),
+            Token::MapEnd,
+        ],
+        "invalid type: map, expected unit struct UnitStruct",
+    );
+}
+
+#[test]
 fn test_adjacently_tagged_enum_containing_flatten() {
     #[derive(Serialize, Deserialize, PartialEq, Debug)]
     #[serde(tag = "t", content = "c")]
